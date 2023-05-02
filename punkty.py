@@ -1,0 +1,62 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+import csv
+
+city_size = 1000
+number_of_points = 100
+
+# tworzenie macierzy punktów 0,0
+point = []
+rows = number_of_points
+cols = 2
+
+for i in range(rows):
+    row = []
+    for j in range(cols):
+        row.append(0)
+    point.append(row)
+    
+
+point[0] = [int(city_size/2),int(city_size/2)]
+    
+for i in range(1, number_of_points):
+    point[i] = [random.randint(0, city_size),random.randint(0,city_size)]
+
+print('point: ', point)
+
+x = []
+for row in point:
+    x.append(row[0])
+
+y = []
+for row in point:
+    y.append(row[1])
+
+print("macierz x: ", x)
+print("macierz y: ", y)
+
+
+# obliczanie odległości między punktami
+distance = []
+rows = number_of_points
+cols = number_of_points
+for i in range(rows):
+    row = []
+    for j in range(cols):
+        row.append(0)
+    distance.append(row)
+
+print(distance)
+
+for i in range (0, number_of_points):
+    for j in range (i, number_of_points):
+         distance[i][j] = distance[j][i] = ((x[i]-x[j])**2+(y[i]-y[j])**2)**0.5
+print(distance)
+with open('distance.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    for row in distance:
+        writer.writerow(row)
+
+plt.plot(x,y,'ro')
+plt.show()
