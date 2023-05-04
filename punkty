@@ -51,7 +51,7 @@ print(distance)
 
 for i in range (0, number_of_points):
     for j in range (i, number_of_points):
-         distance[i][j] = distance[j][i] = ((x[i]-x[j])**2+(y[i]-y[j])**2)**0.5
+         distance[i][j] = ((x[i]-x[j])**2+(y[i]-y[j])**2)**0.5
 print(distance)
 with open('distance.csv', 'w', newline='') as file:
     writer = csv.writer(file)
