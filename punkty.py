@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import csv
+import sys
 
 city_size = 1000
 number_of_points = 100
@@ -63,21 +64,20 @@ plt.show()
 
 #ants
 vehicleCount = 10
-maxWorkTime = 8
+maxWorkTime = 1000000
 maxCapacity = 8
 maxIterations = 100000
 iterationCount = 0
 candidateListSize = int(10 * number_of_points / 100)
 isVisited = np.full(number_of_points,False)
 isVisited[0] = True
-capacity = np.zeros(number_of_points)
-workTime = np.zeros(number_of_points)
+capacity = np.zeros(vehicleCount)
 routes = np.zeros((vehicleCount, number_of_points))
 routeLength = np.zeros(vehicleCount)
 pheromones = np.ones((number_of_points, number_of_points))
 while(not any(isVisited) or iterationCount >= maxIterations):
     for i in range(vehicleCount):
-        if(capacity[i] > maxCapacity or workTime > maxWorkTime):
+        if(capacity[i] > maxCapacity or routeLength[i] + distance[routes[i]][0] > maxWorkTime):
             for j in range(routeLength[i]):
                 isVisited[routes[i][j]] = False
                 routes[i][j] = 0
@@ -98,7 +98,7 @@ while(not any(isVisited) or iterationCount >= maxIterations):
             propabilty = np.zeros(number_of_points)
             for j in range(number_of_points):
                 if(isVisited[j] == True):
-                    propabilty[j] = MAXINT
+                    propabilty[j] = sys.maxint
                 else: 
                     propabilty[j] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])
             nextPoint = propabilty.argmax(propabilty)
@@ -109,5 +109,6 @@ while(not any(isVisited) or iterationCount >= maxIterations):
             nextPoint = random.choices(candidateList, propabilty, k=1)
         routeLength[i]+=1
         routes[i][routeLength] = nextPoint
+
 
 iterationCount += 1
