@@ -72,43 +72,54 @@ candidateListSize = int(10 * number_of_points / 100)
 isVisited = np.full(number_of_points,False)
 isVisited[0] = True
 capacity = np.zeros(vehicleCount)
-routes = np.zeros((vehicleCount, number_of_points))
+routes = np.zeros((vehicleCount, number_of_points),dtype=int)
+routeCount = np.zeros(vehicleCount, dtype=int)
 routeLength = np.zeros(vehicleCount)
 pheromones = np.ones((number_of_points, number_of_points))
-while(not any(isVisited) or iterationCount >= maxIterations):
+while(not all(isVisited) and iterationCount <= maxIterations):
     for i in range(vehicleCount):
-        if(capacity[i] > maxCapacity or routeLength[i] + distance[routes[i]][0] > maxWorkTime):
+        print( routeCount[i])
+
+        if(capacity[i] > maxCapacity or (routeLength[i] + distance[routes[i][routeCount[i]]][0]) > maxWorkTime):
             for j in range(routeLength[i]):
                 isVisited[routes[i][j]] = False
                 routes[i][j] = 0
             routeLength[i] = 0
+            routeCount[i] = 0
         if(routeLength[i]==0):
-            startPoint = random.randint(1,number_of_points)
+            startPoint = random.randint(1,number_of_points-1)
             isVisited[startPoint] = True
-            routeLength[i] = 1
-            routes[i][0] = startPoint
+            routeLength[i] = distance[0][startPoint]
+            routes[i][routeCount[0]] = startPoint
+            routeCount[i] = 1
         else:
-            startPoint = routes[i][routeLength[i]-1]
+            startPoint = routes[i][routeCount[i]-1]
 
-        candidateList = np.argpartition(distance[startPoint], candidateListSize+1)[1:candidateListSize+1]
-        for j, candidate in enumerate(candidateList):
-            if (isVisited[candidate] == True):
-                candidateList.delete(j)
+        candidateList = np.argpartition(distance[startPoint], candidateListSize+1)[:candidateListSize+1]
+        j=0
+        for candidate in candidateList:
+            if (isVisited[candidate] == True or startPoint==candidate):
+                candidateList = np.delete(candidateList, j)
+            else: 
+                j+=1
         if(candidateList.size == 0):
             propabilty = np.zeros(number_of_points)
-            for j in range(number_of_points):
-                if(isVisited[j] == True):
-                    propabilty[j] = sys.maxint
+            for candidate in range(number_of_points):
+                if(isVisited[candidate] == True):
+                    propabilty[candidate] = -1
                 else: 
-                    propabilty[j] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])
-            nextPoint = propabilty.argmax(propabilty)
+                    propabilty[candidate] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])
+            nextPoint = np.argmax(propabilty)
         else:
             propabilty = np.zeros(candidateList.size)
             for j, candidate in enumerate(candidateList):
                 propabilty[j] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate]) 
             nextPoint = random.choices(candidateList, propabilty, k=1)
-        routeLength[i]+=1
-        routes[i][routeLength] = nextPoint
-
+            nextPoint = nextPoint[0]
+        isVisited[nextPoint] = True
+        routeLength[i]+=distance[i][routeCount[i]] 
+        routes[i][routeCount[i]] = nextPoint
+        routeCount[i]+=1
 
 iterationCount += 1
+print(routes)
