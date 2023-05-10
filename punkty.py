@@ -1,3 +1,4 @@
+from tracemalloc import start
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -64,7 +65,7 @@ plt.show()
 
 #ants
 vehicleCount = 10
-maxWorkTime = 1000000
+maxWorkTime = 5500
 maxCapacity = 8
 maxIterations = 100000
 iterationCount = 0
@@ -76,26 +77,22 @@ routes = np.zeros((vehicleCount, number_of_points),dtype=int)
 routeCount = np.zeros(vehicleCount, dtype=int)
 routeLength = np.zeros(vehicleCount)
 pheromones = np.ones((number_of_points, number_of_points))
-while(not all(isVisited) and iterationCount <= maxIterations):
+while(iterationCount <= maxIterations):
     for i in range(vehicleCount):
-        print( routeCount[i])
-
-        if(capacity[i] > maxCapacity or (routeLength[i] + distance[routes[i][routeCount[i]]][0]) > maxWorkTime):
-            for j in range(routeLength[i]):
-                isVisited[routes[i][j]] = False
-                routes[i][j] = 0
-            routeLength[i] = 0
-            routeCount[i] = 0
-        if(routeLength[i]==0):
-            startPoint = random.randint(1,number_of_points-1)
+        if(all(isVisited)):
+            break
+        if(routeCount[i]==0):
+            while(True):
+                startPoint = random.randint(1,number_of_points-1)
+                if(isVisited[startPoint]==False):
+                    break
             isVisited[startPoint] = True
             routeLength[i] = distance[0][startPoint]
-            routes[i][routeCount[0]] = startPoint
             routeCount[i] = 1
-        else:
-            startPoint = routes[i][routeCount[i]-1]
+            routes[i][routeCount[i]] = startPoint
 
-        candidateList = np.argpartition(distance[startPoint], candidateListSize+1)[:candidateListSize+1]
+        startPoint = routes[i][routeCount[i]]
+        candidateList = np.argpartition(distance[startPoint][1:number_of_points-1], candidateListSize)[:candidateListSize]
         j=0
         for candidate in candidateList:
             if (isVisited[candidate] == True or startPoint==candidate):
@@ -113,13 +110,40 @@ while(not all(isVisited) and iterationCount <= maxIterations):
         else:
             propabilty = np.zeros(candidateList.size)
             for j, candidate in enumerate(candidateList):
-                propabilty[j] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate]) 
+                if(startPoint == 0 ):
+                    propabilty[j] = pheromones[startPoint][candidate] * (1 / distance[startPoint][candidate])
+                else:
+                    propabilty[j] = pheromones[startPoint][candidate] * (1 / distance[startPoint][candidate]) * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate]) 
             nextPoint = random.choices(candidateList, propabilty, k=1)
             nextPoint = nextPoint[0]
         isVisited[nextPoint] = True
-        routeLength[i]+=distance[i][routeCount[i]] 
-        routes[i][routeCount[i]] = nextPoint
         routeCount[i]+=1
+        routeLength[i]+=distance[startPoint][nextPoint] 
+        routes[i][routeCount[i]] = nextPoint
 
-iterationCount += 1
+        if(capacity[i] > maxCapacity or (routeLength[i] + distance[routes[i][routeCount[i]]][0]) > maxWorkTime):
+            for j in range(routeCount[i]+1):
+                isVisited[routes[i][j]] = False
+                routes[i][j] = 0
+            routeLength[i] = 0
+            routeCount[i] = 0
+            isVisited[routes[i][0]] = True
+    #print(routeCount)
+    #print("--------------")
+    #print(routeLength)
+    #print("--------------")
+    #print(routes)
+    #print("----iter----------")
+    iterationCount += 1
+
+for i in range(routeLength.size):
+    routeLength[i] += distance[routes[i][routeCount[i]]][0]
+print(routeCount)
+print("--------------")
+print(routeLength)
+print("--------------")
 print(routes)
+
+#con=np.concatenate((routes[0],routes[1],routes[2],routes[3],routes[4],routes[5],routes[6],routes[7],routes[8],routes[9]))
+#sor=np.sort(con)
+#print(sor)
