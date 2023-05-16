@@ -4,9 +4,9 @@ import random
 import csv
 import sys
 
-#np.set_printoptions(threshold=sys.maxsize)
+np.set_printoptions(threshold=sys.maxsize)
 
-city_size = 1000
+city_size = 100
 number_of_points = 100
 
 # tworzenie macierzy punktów 0,0
@@ -66,16 +66,20 @@ plt.show()
 
 #ants
 vehicleCount = 10
-maxWorkTime = 6000
+maxWorkTime = 500
 maxCapacity = 8
 maxIterations = 50000
 iterationCount = 0
+a = 2
+b = 5
+c = 9
 
 candidateListSize = int(25 * number_of_points / 100)
-pheromones = np.full((number_of_points, number_of_points), 2*vehicleCount/maxWorkTime)
+pheromones = np.ones((number_of_points, number_of_points))
 bestSolution = np.zeros((vehicleCount, number_of_points),dtype=int)
 bestSolutionLength = np.full(vehicleCount,sys.maxsize)
 bestSolutionSumLength = sys.maxsize
+whithoutChange = 0
 
 while(iterationCount <= maxIterations):
     capacity = np.zeros(vehicleCount)
@@ -90,18 +94,18 @@ while(iterationCount <= maxIterations):
             if(all(isVisited)):
                 allIsVisited = True
                 break
-            if(routeCount[i]==0):
-                while(True):
-                    startPoint = random.randint(1,number_of_points-1)
-                    if(isVisited[startPoint]==False):
-                        break
-                isVisited[startPoint] = True
-                routeLength[i] = distance[0][startPoint]
-                routeCount[i] = 1
-                routes[i][routeCount[i]] = startPoint
+            #if(routeCount[i]==0):
+             #   while(True):
+              #      startPoint = random.randint(1,number_of_points-1)
+               #     if(isVisited[startPoint]==False):
+               #         break
+               #isVisited[startPoint] = True
+               #routeLength[i] = distance[0][startPoint]
+               #routeCount[i] = 1
+               #routes[i][routeCount[i]] = startPoint
 
             startPoint = routes[i][routeCount[i]]
-            candidateList = np.argpartition(distance[startPoint][1:number_of_points-1], candidateListSize)[:candidateListSize]
+            candidateList = np.argpartition(distance[startPoint], candidateListSize)[:candidateListSize]
             j=0
             for candidate in candidateList:
                 if (isVisited[candidate] == True or startPoint==candidate):
@@ -114,15 +118,15 @@ while(iterationCount <= maxIterations):
                     if(isVisited[candidate] == True):
                         propabilty[candidate] = -1
                     else: 
-                        propabilty[candidate] = pheromones[startPoint][candidate] * 1 / distance[startPoint][candidate] * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])
+                        propabilty[candidate] = pheromones[startPoint][candidate]**a * 1 / distance[startPoint][candidate]**b * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])**c
                 nextPoint = np.argmax(propabilty)
             else:
                 propabilty = np.zeros(candidateList.size)
                 for j, candidate in enumerate(candidateList):
                     if(startPoint == 0 ):
-                        propabilty[j] = pheromones[startPoint][candidate] * (1 / distance[startPoint][candidate])
+                        propabilty[j] = pheromones[startPoint][candidate]**a * (1 / distance[startPoint][candidate])**b
                     else:
-                        propabilty[j] = pheromones[startPoint][candidate] * (1 / distance[startPoint][candidate]) * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate]) 
+                        propabilty[j] = pheromones[startPoint][candidate]**a * (1 / distance[startPoint][candidate])**b * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])**c 
                 nextPoint = random.choices(candidateList, propabilty, k=1)
                 nextPoint = nextPoint[0]
             isVisited[nextPoint] = True
@@ -143,22 +147,29 @@ while(iterationCount <= maxIterations):
         routeLength[i] += distance[routes[i][routeCount[i]]][0]
         sumRouteLength += routeLength[i]
 
+    #heurestics
+
     #evaporation of pheromones
-    for i in range(number_of_points):
-        for j in range(number_of_points):
-            pheromones[i][j] = max(0.01, pheromones[i][j] - (vehicleCount/maxWorkTime/100 + 5/np.average(routeLength)))
     #pheromone depositon
     if(sumRouteLength < bestSolutionSumLength):
+        withoutChange = 0
         bestSolutionCount = routeCount
         bestSolution = routes
         bestSolutionLength = routeLength
         bestSolutionSumLength = sumRouteLength
+        for i in range(number_of_points):
+            for j in range(number_of_points):
+                pheromones[i][j] = max(0.01, pheromones[i][j] - (0.8 + 80/np.average(routeLength)))
+        for j, solution in enumerate(routes):
+            for i in range(1, routeCount[j]):
+                pheromones[solution[i-1]][solution[i]] = pheromones[solution[i]][solution[i-1]] = pheromones[solution[i]][solution[i-1]] + 10/distance[solution[i]][solution[i-1]]
+        print(pheromones)
+        print("--------------")
+    else:
+        withoutChange += 1
+        if(withoutChange==1000):
+            break
 
-    for j, solution in enumerate(bestSolution):
-        for i in range(1, bestSolutionCount[j]):
-            pheromones[solution[i-1]][solution[i]] = pheromones[solution[i]][solution[i-1]] = pheromones[solution[i]][solution[i-1]] + 100/distance[solution[i]][solution[i-1]]
-    print(pheromones)
-    print("--------------")
     print(routeCount)
     print("--------------")
     print(routeLength)
