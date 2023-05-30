@@ -21,10 +21,20 @@ for i in range(rows):
     point.append(row)
     
 
-point[0] = [int(city_size/2),int(city_size/2)]
-    
-for i in range(1, number_of_points):
-    point[i] = [random.randint(0, city_size),random.randint(0,city_size)]
+# losowanie punktów bez powtórzeń
+middle = int(city_size/2)
+point[0] = [int(middle),int(middle)]
+
+i = 1
+while i<number_of_points:
+    x = 0
+    a = [random.randint(0, city_size), random.randint(0, city_size)]
+    for j in range(i):
+        if point[j] == a:
+            x = x+1
+    if x == 0:
+        point[i] = a
+        i = i+1
 
 print('point: ', point)
 
