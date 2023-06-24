@@ -7,7 +7,7 @@ import sys
 np.set_printoptions(threshold=sys.maxsize)
 
 city_size = 100
-number_of_points = 100
+number_of_points = 200
 
 # tworzenie macierzy punktów 0,0
 point = []
@@ -90,6 +90,8 @@ bestSolution = np.zeros((vehicleCount, number_of_points),dtype=int)
 bestSolutionLength = np.full(vehicleCount,sys.maxsize)
 bestSolutionSumLength = sys.maxsize
 whithoutChange = 0
+stuckCooldown = 0
+foundSolution = np.full(vehicleCount*2, False)
 
 while(iterationCount <= maxIterations):
     capacity = np.zeros(vehicleCount)
@@ -99,6 +101,7 @@ while(iterationCount <= maxIterations):
     isVisited = np.full(number_of_points,False)
     isVisited[0] = True
     allIsVisited=False
+    currentIterationIter = 0
     while(not allIsVisited):
         for i in range(vehicleCount):
             if(all(isVisited)):
@@ -151,6 +154,20 @@ while(iterationCount <= maxIterations):
                 routeLength[i] = 0
                 routeCount[i] = 0
                 isVisited[routes[i][0]] = True
+        if(currentIterationIter > 5000 and not foundSolution[vehicleCount]):
+            stuckCooldown = 250
+            vehicleCount += 1
+            break
+        else:
+            currentIterationIter += 1
+
+    if(stuckCooldown == 250):
+        stuckCooldown-=1 
+        continue
+    else:
+        stuckCooldown-=1
+
+    foundSolution[vehicleCount]=True
 
     sumRouteLength = 0
     for i in range(vehicleCount):
@@ -162,6 +179,8 @@ while(iterationCount <= maxIterations):
     #evaporation of pheromones
     #pheromone depositon
     if(sumRouteLength < bestSolutionSumLength):
+        if(any(routeLen < maxWorkTime*7/9 for routeLen in routeLength) and vehicleCount>1 and stuckCooldown < 1):
+            vehicleCount -= 1
         withoutChange = 0
         bestSolutionCount = routeCount
         bestSolution = routes
@@ -173,8 +192,8 @@ while(iterationCount <= maxIterations):
         for j, solution in enumerate(routes):
             for i in range(1, routeCount[j]):
                 pheromones[solution[i-1]][solution[i]] = pheromones[solution[i]][solution[i-1]] = pheromones[solution[i]][solution[i-1]] + 10/distance[solution[i]][solution[i-1]]
-        print(pheromones)
-        print("--------------")
+        #print(pheromones)
+        #print("--------------")
     else:
         withoutChange += 1
         if(withoutChange==1000):
