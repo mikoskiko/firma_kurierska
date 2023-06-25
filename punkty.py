@@ -7,7 +7,7 @@ import sys
 np.set_printoptions(threshold=sys.maxsize)
 
 city_size = 100
-number_of_points = 200
+number_of_points = 250
 
 # tworzenie macierzy punktów 0,0
 point = []
@@ -107,15 +107,6 @@ while(iterationCount <= maxIterations):
             if(all(isVisited)):
                 allIsVisited = True
                 break
-            #if(routeCount[i]==0):
-             #   while(True):
-              #      startPoint = random.randint(1,number_of_points-1)
-               #     if(isVisited[startPoint]==False):
-               #         break
-               #isVisited[startPoint] = True
-               #routeLength[i] = distance[0][startPoint]
-               #routeCount[i] = 1
-               #routes[i][routeCount[i]] = startPoint
 
             startPoint = routes[i][routeCount[i]]
             candidateList = np.argpartition(distance[startPoint], candidateListSize)[:candidateListSize]
@@ -136,7 +127,7 @@ while(iterationCount <= maxIterations):
             else:
                 propabilty = np.zeros(candidateList.size)
                 for j, candidate in enumerate(candidateList):
-                    if(startPoint == 0 ):
+                    if(startPoint == 0 or distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate] == 0):
                         propabilty[j] = pheromones[startPoint][candidate]**a * (1 / distance[startPoint][candidate])**b
                     else:
                         propabilty[j] = pheromones[startPoint][candidate]**a * (1 / distance[startPoint][candidate])**b * (distance[startPoint][0]+distance[0][candidate]-distance[startPoint][candidate])**c 
@@ -174,8 +165,6 @@ while(iterationCount <= maxIterations):
         routeLength[i] += distance[routes[i][routeCount[i]]][0]
         sumRouteLength += routeLength[i]
 
-    #heurestics
-
     #evaporation of pheromones
     #pheromone depositon
     if(sumRouteLength < bestSolutionSumLength):
@@ -188,12 +177,10 @@ while(iterationCount <= maxIterations):
         bestSolutionSumLength = sumRouteLength
         for i in range(number_of_points):
             for j in range(number_of_points):
-                pheromones[i][j] = max(0.01, pheromones[i][j] - (0.8 + 80/np.average(routeLength)))
+                pheromones[i][j] = max(0.01, pheromones[i][j] - (0.5 + 80/np.average(routeLength)))
         for j, solution in enumerate(routes):
             for i in range(1, routeCount[j]):
-                pheromones[solution[i-1]][solution[i]] = pheromones[solution[i]][solution[i-1]] = pheromones[solution[i]][solution[i-1]] + 10/distance[solution[i]][solution[i-1]]
-        #print(pheromones)
-        #print("--------------")
+                pheromones[solution[i-1]][solution[i]] = pheromones[solution[i]][solution[i-1]] = min(5, pheromones[solution[i]][solution[i-1]] + maxWorkTime/routeLength[j])
     else:
         withoutChange += 1
         if(withoutChange==1000):
@@ -225,7 +212,3 @@ for j, vehicleRoute in enumerate(bestSolution):
             else:
                 break
 plt.show()
-
-#con=np.concatenate((routes[0],routes[1],routes[2],routes[3],routes[4],routes[5],routes[6],routes[7],routes[8],routes[9]))
-#sor=np.sort(con)
-#print(sor)
